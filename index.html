@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>두더지 잡기 게임</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-image: url('images/background.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .game-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .score {
+            color: #2c5aa0;
+        }
+
+        .time {
+            color: #d9534f;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            width: 450px;
+            height: 450px;
+            margin: 20px auto;
+            padding: 20px;
+            background: rgba(139, 69, 19, 0.3);
+            border-radius: 15px;
+        }
+
+        .hole {
+            width: 130px;
+            height: 130px;
+            background: #654321;
+            border-radius: 50%;
+            position: relative;
+            cursor: pointer;
+            border: 5px solid #8B4513;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: all 0.1s ease;
+        }
+
+        .hole:hover {
+            transform: scale(1.05);
+        }
+
+        .mole {
+            width: 100px;
+            height: 100px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            position: absolute;
+            bottom: -100px;
+            transition: bottom 0.3s ease;
+            cursor: pointer;
+        }
+
+        .mole.show {
+            bottom: 10px;
+        }
+
+        .mole.mole1 {
+            background-image: url('images/mole1.png');
+        }
+
+        .mole.mole2 {
+            background-image: url('images/mole2.png');
+        }
+
+        .mole.mole3 {
+            background-image: url('images/mole3.png');
+        }
+
+        .start-btn, .reset-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .start-btn:hover, .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .reset-btn {
+            background: linear-gradient(45deg, #f44336, #da190b);
+        }
+
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .game-over-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .final-score {
+            font-size: 36px;
+            color: #2c5aa0;
+            margin: 20px 0;
+        }
+
+        @keyframes hit {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .hit-animation {
+            animation: hit 0.2s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🔨 두더지 잡기 게임 🔨</h1>
+        
+        <div class="game-info">
+            <div class="score">점수: <span id="score">0</span></div>
+            <div class="time">시간: <span id="time">60</span>초</div>
+        </div>
+
+        <div class="game-board" id="gameBoard">
+            <div class="hole" data-hole="0"><div class="mole" id="mole0"></div></div>
+            <div class="hole" data-hole="1"><div class="mole" id="mole1"></div></div>
+            <div class="hole" data-hole="2"><div class="mole" id="mole2"></div></div>
+            <div class="hole" data-hole="3"><div class="mole" id="mole3"></div></div>
+            <div class="hole" data-hole="4"><div class="mole" id="mole4"></div></div>
+            <div class="hole" data-hole="5"><div class="mole" id="mole5"></div></div>
+            <div class="hole" data-hole="6"><div class="mole" id="mole6"></div></div>
+            <div class="hole" data-hole="7"><div class="mole" id="mole7"></div></div>
+            <div class="hole" data-hole="8"><div class="mole" id="mole8"></div></div>
+        </div>
+
+        <button class="start-btn" id="startBtn">게임 시작</button>
+        <button class="reset-btn" id="resetBtn">다시 시작</button>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h2>게임 종료!</h2>
+            <div class="final-score" id="finalScore">최종 점수: 0</div>
+            <button class="start-btn" onclick="closeGameOver()">다시 도전</button>
+        </div>
+    </div>
+
+    <script>
+        let score = 0;
+        let timeLeft = 60;
+        let gameRunning = false;
+        let gameTimer;
+        let moleTimer;
+        
+        const scoreElement = document.getElementById('score');
+        const timeElement = document.getElementById('time');
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const gameOverModal = document.getElementById('gameOver');
+        const finalScoreElement = document.getElementById('finalScore');
+        
+        const moleTypes = ['mole1', 'mole2', 'mole3'];
+        const moleScores = [10, 15, 20]; // 각 두더지별 점수
+        
+        function startGame() {
+            if (gameRunning) return;
+            
+            gameRunning = true;
+            score = 0;
+            timeLeft = 60;
+            updateDisplay();
+            
+            startBtn.disabled = true;
+            startBtn.textContent = '게임 진행중...';
+            
+            // 타이머 시작
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                timeElement.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+            
+            // 두더지 출현 시작
+            showRandomMole();
+        }
+        
+        function showRandomMole() {
+            if (!gameRunning) return;
+            
+            // 랜덤 구멍 선택
+            const randomHole = Math.floor(Math.random() * 9);
+            const mole = document.getElementById(`mole${randomHole}`);
+            
+            // 이미 두더지가 나와있으면 다른 구멍 선택
+            if (mole.classList.contains('show')) {
+                showRandomMole();
+                return;
+            }
+            
+            // 랜덤 두더지 타입 선택
+            const randomType = Math.floor(Math.random() * 3);
+            mole.className = `mole ${moleTypes[randomType]} show`;
+            mole.dataset.score = moleScores[randomType];
+            
+            // 두더지가 나타나는 시간 (1-3초)
+            const showTime = Math.random() * 2000 + 1000;
+            
+            setTimeout(() => {
+                mole.classList.remove('show');
+            }, showTime);
+            
+            // 다음 두더지 출현 시간 (0.5-2초 후)
+            const nextMoleTime = Math.random() * 1500 + 500;
+            moleTimer = setTimeout(showRandomMole, nextMoleTime);
+        }
+        
+        function hitMole(event) {
+            if (!gameRunning) return;
+            
+            const mole = event.target;
+            if (mole.classList.contains('mole') && mole.classList.contains('show')) {
+                const points = parseInt(mole.dataset.score) || 10;
+                score += points;
+                updateDisplay();
+                
+                // 히트 애니메이션
+                mole.classList.add('hit-animation');
+                setTimeout(() => {
+                    mole.classList.remove('hit-animation');
+                }, 200);
+                
+                // 두더지 숨기기
+                mole.classList.remove('show');
+                
+                // 점수 표시 효과
+                showScoreEffect(event.clientX, event.clientY, points);
+            }
+        }
+        
+        function showScoreEffect(x, y, points) {
+            const scoreEffect = document.createElement('div');
+            scoreEffect.textContent = `+${points}`;
+            scoreEffect.style.position = 'fixed';
+            scoreEffect.style.left = x + 'px';
+            scoreEffect.style.top = y + 'px';
+            scoreEffect.style.color = '#4CAF50';
+            scoreEffect.style.fontSize = '24px';
+            scoreEffect.style.fontWeight = 'bold';
+            scoreEffect.style.pointerEvents = 'none';
+            scoreEffect.style.zIndex = '9999';
+            scoreEffect.style.transition = 'all 1s ease';
+            
+            document.body.appendChild(scoreEffect);
+            
+            setTimeout(() => {
+                scoreEffect.style.transform = 'translateY(-50px)';
+                scoreEffect.style.opacity = '0';
+            }, 100);
+            
+            setTimeout(() => {
+                document.body.removeChild(scoreEffect);
+            }, 1100);
+        }
+        
+        function updateDisplay() {
+            scoreElement.textContent = score;
+            timeElement.textContent = timeLeft;
+        }
+        
+        function endGame() {
+            gameRunning = false;
+            clearInterval(gameTimer);
+            clearTimeout(moleTimer);
+            
+            // 모든 두더지 숨기기
+            document.querySelectorAll('.mole').forEach(mole => {
+                mole.classList.remove('show');
+            });
+            
+            // 게임 오버 모달 표시
+            finalScoreElement.textContent = `최종 점수: ${score}`;
+            gameOverModal.style.display = 'flex';
+            
+            resetGame();
+        }
+        
+        function resetGame() {
+            gameRunning = false;
+            clearInterval(gameTimer);
+            clearTimeout(moleTimer);
+            
+            score = 0;
+            timeLeft = 60;
+            updateDisplay();
+            
+            startBtn.disabled = false;
+            startBtn.textContent = '게임 시작';
+            
+            // 모든 두더지 숨기기
+            document.querySelectorAll('.mole').forEach(mole => {
+                mole.classList.remove('show');
+            });
+        }
+        
+        function closeGameOver() {
+            gameOverModal.style.display = 'none';
+        }
+        
+        // 이벤트 리스너
+        startBtn.addEventListener('click', startGame);
+        resetBtn.addEventListener('click', resetGame);
+        
+        // 두더지 클릭 이벤트
+        document.querySelectorAll('.mole').forEach(mole => {
+            mole.addEventListener('click', hitMole);
+        });
+        
+        // 구멍 클릭 시에도 두더지 체크
+        document.querySelectorAll('.hole').forEach(hole => {
+            hole.addEventListener('click', (e) => {
+                const mole = hole.querySelector('.mole');
+                if (mole && mole.classList.contains('show')) {
+                    hitMole({target: mole, clientX: e.clientX, clientY: e.clientY});
+                }
+            });
+        });
+    </script>
+</body>
+</html>
